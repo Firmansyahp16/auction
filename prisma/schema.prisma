@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  seller
+  bidder
+}
+
+model User {
+  id               String    @id
+  fullName         String?
+  email            String?   @unique
+  hashedPassword   String?
+  role             Role[]    @default([])
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  // 
+  auctions         Auction[] @relation(name: "ownership")
+  approvedAuctions Auction[] @relation(name: "approvedBy")
+  bids             Bid[]
+}
+
+enum AuctionStatus {
+  review
+  approved
+  active
+  ended
+  cancelled
+}
+
+model Auction {
+  id           String         @id
+  title        String?
+  description  String?
+  status       AuctionStatus? @default(review)
+  startPrice   Int
+  currentPrice Int?           @default(0)
+  startTime    DateTime
+  endTime      DateTime
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  // 
+  ownerId      String
+  owner        User           @relation(fields: [ownerId], references: [id], name: "ownership")
+  // 
+  approvedById String
+  approvedBy   User           @relation(fields: [approvedById], references: [id], name: "approvedBy")
+  // 
+  bids         Bid[]
+}
+
+model Bid {
+  id        String   @id
+  amount    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  auctionId String
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+  bidderId  String
+  bidder    User     @relation(fields: [bidderId], references: [id])
+}
+
+enum ResourceType {
+  user
+  auction
+  bid
+}
+
+enum AuditAction {
+  create
+  update
+  delete
+}
+
+model Audit {
+  id          String       @id
+  resource    ResourceType
+  entityId    String
+  action      AuditAction
+  oldResource Json?
+  newResource Json?
+  ownerId     String
+  timestamp   DateTime
+}
