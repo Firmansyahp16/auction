@@ -8,8 +8,10 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { AuctionStatus, Prisma } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/auth.guard';
+import { MyUserProfile } from '../auth/auth.service';
+import { CurrentUser } from '../common/decorators/current.decorator';
 import { AuctionService } from './auction.service';
 
 @Controller('Auction')
@@ -28,8 +30,12 @@ export class AuctionController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() data: Prisma.AuctionCreateInput) {
-    return this.auctionService.create(data);
+  async create(
+    @Body()
+    data: Prisma.AuctionCreateInput,
+    @CurrentUser() user: MyUserProfile,
+  ) {
+    return this.auctionService.create(data, String(user.sub));
   }
 
   @UseGuards(JwtAuthGuard)
@@ -45,5 +51,22 @@ export class AuctionController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return this.auctionService.deleteById(id);
+  }
+
+  // CUSTOM ENDPOINT
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/review')
+  async review(
+    @Param('id') id: string,
+    @CurrentUser() user: MyUserProfile,
+    @Body()
+    data: {
+      status: AuctionStatus;
+      startTime: Date;
+      endTime: Date;
+    },
+  ) {
+    return this.auctionService.review(id, String(user.sub), data);
   }
 }

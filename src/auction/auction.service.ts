@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { AuctionStatus, Prisma } from '@prisma/client';
 import { DatabaseService } from '../database/database.service';
 import { generateID, IDType } from '../utils/generateID';
 
@@ -24,11 +24,16 @@ export class AuctionService {
     });
   };
 
-  create = async (data: Prisma.AuctionCreateInput) => {
-    return this.db.auction.create({
+  create = async (data: Prisma.AuctionCreateInput, ownerId: string) => {
+    return await this.db.auction.create({
       data: {
         ...data,
         id: generateID(IDType.AUCTION),
+        owner: {
+          connect: {
+            id: ownerId,
+          },
+        },
       },
     });
   };
@@ -43,6 +48,30 @@ export class AuctionService {
   deleteById = async (id: string) => {
     return this.db.auction.delete({
       where: { id },
+    });
+  };
+
+  review = async (
+    id: string,
+    approvedById: string,
+    data: {
+      status: AuctionStatus;
+      startTime: Date;
+      endTime: Date;
+    },
+  ) => {
+    return this.db.auction.update({
+      where: { id },
+      data: {
+        status: data.status,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        approvedBy: {
+          connect: {
+            id: approvedById,
+          },
+        },
+      },
     });
   };
 }
