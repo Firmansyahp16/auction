@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 import { generateID, IDType } from 'src/utils/generateID';
+import { QueueService } from '../queue/queue.service';
 
 @Injectable()
 export class BidService {
-  constructor(private db: DatabaseService) {}
+  constructor(
+    private db: DatabaseService,
+    private queue: QueueService,
+  ) {}
 
   find = async (where?: Prisma.BidWhereInput, select?: Prisma.BidSelect) => {
     return this.db.bid.findMany({
@@ -41,5 +45,11 @@ export class BidService {
     return this.db.bid.delete({
       where: { id },
     });
+  };
+
+  submitBid = async (auctionId: string, bidderId: string, amount: number) => {
+    await this.queue
+      .getBidQueue()
+      .add('submitBid', { auctionId, bidderId, amount });
   };
 }
