@@ -31,6 +31,7 @@ model User {
   auctions         Auction[] @relation(name: "ownership")
   approvedAuctions Auction[] @relation(name: "approvedBy")
   bids             Bid[]
+  winningAuctions  Auction[] @relation(name: "winner")
 }
 
 enum AuctionStatus {
@@ -53,13 +54,16 @@ model Auction {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   // 
-  ownerId      String
-  owner        User           @relation(fields: [ownerId], references: [id], name: "ownership")
+  ownerId      String?
+  owner        User?          @relation(fields: [ownerId], references: [id], name: "ownership")
   // 
-  approvedById String
-  approvedBy   User           @relation(fields: [approvedById], references: [id], name: "approvedBy")
+  approvedById String?
+  approvedBy   User?          @relation(fields: [approvedById], references: [id], name: "approvedBy")
   // 
   bids         Bid[]
+  // 
+  winnerId     String?
+  winner       User?          @relation(fields: [winnerId], references: [id], name: "winner")
 }
 
 model Bid {
